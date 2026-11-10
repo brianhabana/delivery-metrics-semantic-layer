@@ -218,3 +218,17 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# JetBrains IDE settings
+.idea/
+
+# dbt / DuckDB outputs
+target/
+logs/
+dbt_packages/
+*.duckdb
+*.duckdb.wal
+.user.yml
+# Editor / tool scratch files
+identifier.db
+.user.yml

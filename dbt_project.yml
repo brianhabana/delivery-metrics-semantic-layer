@@ -1,0 +1,14 @@
+name: subscription_metrics
+version: "1.0.0"
+profile: subscription_metrics
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+
+models:
+  subscription_metrics:
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table

@@ -1,0 +1,99 @@
+models:
+  - name: fct_subscriptions
+    description: One row per subscription, with 90-day retention flags.
+
+    # Turn this model into a MetricFlow semantic model
+    semantic_model: true
+    # Default date for metrics on this model
+    agg_time_dimension: started_at
+
+    columns:
+      # Entities: the keys MetricFlow uses to identify and join rows
+      - name: subscription_id
+        entity:
+          type: primary
+          name: subscription
+      - name: customer_id
+        entity:
+          type: foreign
+          name: customer
+
+      # Categorical dimensions: things to group and filter by
+      - name: plan
+        dimension: categorical
+      - name: region
+        dimension: categorical
+
+      # Time dimensions: dates metrics can be rolled up by (day/week/month)
+      - name: started_at
+        granularity: day
+        dimension:
+          type: time
+      - name: cancelled_at
+        granularity: day
+        dimension:
+          type: time
+
+    metrics:
+      # --- Simple: add up a column ---
+      - name: new_subscriptions
+        description: Subscriptions started, dated by start date.
+        type: simple
+        agg: count
+        expr: subscription_id
+
+      - name: cancellations
+        description: Subscriptions cancelled, dated by cancel date.
+        type: simple
+        agg: sum
+        expr: is_cancelled
+        agg_time_dimension: cancelled_at
+
+      # --- Derived: math on other metrics ---
+      - name: net_new_subscriptions
+        description: New subscriptions minus cancellations.
+        type: derived
+        expr: new_subscriptions - cancellations
+        input_metrics:
+          - name: new_subscriptions
+          - name: cancellations
+
+      # --- Cumulative: running totals (helpers, hidden from users) ---
+      - name: cumulative_starts
+        type: cumulative
+        input_metric: new_subscriptions
+        period_agg: last
+        hidden: true
+
+      - name: cumulative_cancellations
+        type: cumulative
+        input_metric: cancellations
+        period_agg: last
+        hidden: true
+
+      - name: active_subscriptions
+        description: Subscriptions active at the end of the period (running balance).
+        type: derived
+        expr: cumulative_starts - cumulative_cancellations
+        input_metrics:
+          - name: cumulative_starts
+          - name: cumulative_cancellations
+
+      # --- Ratio: one metric divided by another ---
+      - name: eligible_90d
+        type: simple
+        agg: sum
+        expr: is_eligible_90d
+        hidden: true
+
+      - name: retained_90d
+        type: simple
+        agg: sum
+        expr: is_retained_90d
+        hidden: true
+
+      - name: retention_rate_90d
+        description: Share of eligible subscriptions still active 90 days after starting.
+        type: ratio
+        numerator: retained_90d
+        denominator: eligible_90d

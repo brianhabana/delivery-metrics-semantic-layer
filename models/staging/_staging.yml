@@ -1,0 +1,41 @@
+models:
+  - name: stg_customers
+    description: Cleaned customers, one row per customer.
+    columns:
+      - name: customer_id
+        data_tests:
+          - unique
+          - not_null
+      - name: signup_date
+        data_tests:
+          - not_null
+      - name: region
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['NA', 'EMEA', 'APAC', 'LATAM']
+
+  - name: stg_subscriptions
+    description: Cleaned subscriptions, one row per subscription.
+    columns:
+      - name: subscription_id
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_customers')
+                field: customer_id
+      - name: plan
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['monthly', 'annual']
+      - name: started_at
+        data_tests:
+          - not_null
