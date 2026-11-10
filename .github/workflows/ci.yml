@@ -1,0 +1,41 @@
+# Runs the full test plan on every push and pull request:
+#   1. yamllint                -> YAML is valid and well-formed
+#   2. dbt build               -> seeds load, models build, data tests pass
+#   3. mf validate-configs     -> semantic model and metrics are valid against the warehouse
+#   4. reconcile.py            -> every metric matches an independent hand-written query
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      DBT_PROFILES_DIR: .
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: "Layer 1: lint YAML"
+        run: yamllint .
+
+      - name: "Layer 2: build models and run data tests"
+        run: dbt build
+
+      - name: "Layer 3: validate semantic layer config"
+        run: mf validate-configs
+
+      - name: "Layer 4: reconcile metrics against hand-written SQL"
+        run: python scripts/reconcile.py

@@ -1,0 +1,16 @@
+# Layer 1 of the test plan: every YAML file must parse and follow basic style.
+extends: default
+
+# Skip anything git ignores (virtualenv, build output, local files).
+ignore-from-file: .gitignore
+
+rules:
+  document-start: disable
+  # Line endings are normalized by git; don't fail on Windows CRLF checkouts.
+  new-lines: disable
+  line-length:
+    max: 120
+  comments:
+    min-spaces-from-content: 1
+  truthy:
+    allowed-values: ["true", "false", "on"]
